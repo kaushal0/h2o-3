@@ -79,6 +79,32 @@ RUN \
   /usr/sbin/install_R_versions
 ENV PATH ${PATH}:/usr/local/R/current/bin/
 
+# Copy H2O-3 build script and create required folders
+COPY scripts/build-h2o-3 /tmp
+RUN \
+  chmod a+x /tmp/build-h2o-3 && \
+  mkdir -p /opt/h2o-3 /gradle-user-home /home/h2oai && \
+  chmod a+w /opt/h2o-3 /gradle-user-home /home/h2oai
+
+# Set GRADLE USER HOME env var
+ENV GRADLE_USER_HOME=/gradle-user-home HOME=/home/h2oai
+
+# cd to folder, where h2o-3 will be cloned
+WORKDIR /opt/h2o-3
+# build h2o-3 as custom user
+USER 2117
+RUN \
+  /tmp/build-h2o-3
+
+# cd back to /
+WORKDIR /
+# as root remove the h2o-3 and build script and make the /gradle-user-home writable
+USER root
+# remove the /gradle-user-home/daemon as well since it won't break caches and the folder is messed up
+RUN \
+  rm -rf /opt/h2o-3 /tmp/build-h2o-3 /gradle-user-home/daemon && \
+  chmod -R a+rw /gradle-user-home /home/h2oai
+
 # Expose ports for services
 EXPOSE 54321
 EXPOSE 8080

@@ -1,0 +1,18 @@
+#! /bin/bash
+
+set -e
+
+# Some build steps require username, so give them one
+export USER=jenkins
+export HOME=/home/h2oai
+export GRADLE_OPTS='-Dorg.gradle.daemon=false'
+
+echo "Activate virtualenv"
+. /envs/h2o_env_python3.5/bin/activate
+
+echo "Clone h2o-3"
+git clone https://github.com/h2oai/h2o-3 .
+
+echo "Clean build"
+./gradlew clean
+./gradlew build -x test
