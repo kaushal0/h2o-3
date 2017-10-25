@@ -10,8 +10,9 @@ def call(customEnv, buildConfig, timeoutValue, timeoutUnit, block) {
     timeout(time: timeoutValue, unit: timeoutUnit) {
       docker.withRegistry("https://${registry}") {
         sh "mkdir -p gradle-user-home"
-        docker.image(image).inside('-v /home/0xdiag/smalldata:/home/0xdiag/smalldata -v /home/0xdiag/bigdata:/home/0xdiag/bigdata -v \${WORKSPACE}/gradle-user-home/:\${WORKSPACE}/gradle-user-home -e HOME=\${WORKSPACE}') {
-          sh "printenv"
+        docker.image(image).inside('-v /home/0xdiag/smalldata:/home/0xdiag/smalldata -v /home/0xdiag/bigdata:/home/0xdiag/bigdata -v \${WORKSPACE}/gradle-user-home/:\${WORKSPACE}/gradle-user-home') {
+          sh 'id'
+          sh 'printenv'
           block()
         }
       }
