@@ -7,12 +7,11 @@ export USER=jenkins
 export HOME=/home/h2oai
 export GRADLE_OPTS='-Dorg.gradle.daemon=false'
 
-echo "Activate virtualenv"
+echo "###### Activate virtualenv ######"
 . /envs/h2o_env_python3.5/bin/activate
 
-echo "Clone h2o-3"
+echo "###### Clone H2O-3 ######"
 git clone https://github.com/h2oai/h2o-3 .
 
-echo "Clean build"
-./gradlew clean
-./gradlew build -x test
+echo "###### Build H2O-3 ######"
+make -f docker/Makefile.jenkins build-h2o-3
