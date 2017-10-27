@@ -1,5 +1,6 @@
 def call(customEnv, buildConfig, timeoutValue, timeoutUnit, block) {
 
+  def AWS_CREDENTIALS_ID = 'AWS S3 Credentials'
   def registry = 'docker.h2o.ai'
   def image = "${registry}/opsh2oai/h2o-3-runtime:${buildConfig.DOCKER_IMAGE_VERSION_TAG}"
   withCredentials([usernamePassword(credentialsId: registry, usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD')]) {
@@ -10,10 +11,12 @@ def call(customEnv, buildConfig, timeoutValue, timeoutUnit, block) {
     timeout(time: timeoutValue, unit: timeoutUnit) {
       docker.withRegistry("https://${registry}") {
         sh "mkdir -p gradle-user-home"
-        docker.image(image).inside('-v /home/0xdiag/smalldata:/home/0xdiag/smalldata -v /home/0xdiag/bigdata:/home/0xdiag/bigdata -v \${WORKSPACE}/gradle-user-home/:\${WORKSPACE}/gradle-user-home') {
-          sh 'id'
-          sh 'printenv'
-          block()
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: AWS_CREDENTIALS_ID, secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+          docker.image(image).inside('-v /home/0xdiag/smalldata:/home/0xdiag/smalldata -v /home/0xdiag/bigdata:/home/0xdiag/bigdata -v \${WORKSPACE}/gradle-user-home/:\${WORKSPACE}/gradle-user-home') {
+            sh 'id'
+            sh 'printenv'
+            block()
+          }
         }
       }
     }

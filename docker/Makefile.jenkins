@@ -1,8 +1,6 @@
-#
-# Docker image tagging
-#
 .NOTPARALLEL: all
 SHELL:=/bin/bash
+THIS_FILE := $(lastword $(MAKEFILE_LIST))
 
 build-h2o-3:
 	@echo "+--Building H2O-3--+"
@@ -12,6 +10,8 @@ build-h2o-3:
 	@echo
 	@echo "+--Building--+"
 	./gradlew build -x test
+	@echo "+--Test JAR--+"
+	./gradlew testJar
 	@echo "+--Git Diff Check--+"
 	if [[ $$(git diff) ]]; then \
 		echo "Non-zero git diff after running gradlew build:"; \
@@ -20,7 +20,7 @@ build-h2o-3:
 	fi
 	@echo "+--Gradle Check--+"
 	./gradlew -PdoCheckStyle check -x test
-	./gradlew testJar
+
 
 test-package-py:
 	cd h2o-py/tests/ && rm -f -r testdir_hdfs
@@ -184,54 +184,72 @@ test-package-java:
 	find . -name "*test*.sh" | zip -r test-package-java -@
 	find . -name "*test*.jar" | zip -r test-package-java -@
 
-test-junit:
+test-junit-algos:
 	@echo "+--JUnit H2O-Algos TestMultiNode--+"
 	rm -f h2o-core/src/main/java/water/init/BuildVersion.java
 	./gradlew h2o-algos:cpLibs
-	cd h2o-algos && ./testSingleNode.sh
+	cd h2o-algos && ./testMultiNode.sh
 	@echo "+--JUnit H2O-Algos TestSingleNode--+"
 	rm -f h2o-core/src/main/java/water/init/BuildVersion.java
 	cd h2o-algos && ./testSingleNode.sh
 
+test-junit-avro-parser:
 	@echo "+--JUnit H2O-AVRO-Parser TestMultiNode--+"
 	rm -f h2o-core/src/main/java/water/init/BuildVersion.java
 	./gradlew h2o-avro-parser:cpLibs
 	cd h2o-parsers/h2o-avro-parser && ./testMultiNode.sh
 
+test-junit-core:
 	# echo "+--JUnit H2O-Core TestMultiNode--+"
 	# rm -f h2o-core/src/main/java/water/init/BuildVersion.java
 	# ./gradlew h2o-core:cpLibs
 	# cd h2o-core && ./testMultiNode.sh
 
+test-junit-ext-xgboost:
 	@echo "+--JUnit H2O-Ext-XGBoost TestSingleNode--+"
 	rm -f h2o-core/src/main/java/water/init/BuildVersion.java
 	./gradlew h2o-ext-xgboost:cpLibs
 	cd h2o-extensions/xgboost && JVM_CLASSPATH=../../h2o-extensions/xgboost/build/classes/test:../../h2o-extensions/xgboost/build/resources/test:../../h2o-extensions/xgboost/build/classes/main:../../h2o-extensions/xgboost/build/resources/main:../../h2o-genmodel-extensions/xgboost/lib/xgboost4j-0.7.jar:../../h2o-genmodel-extensions/xgboost/lib/xgboost4j-native-osx_minimum-0.7.jar:../../h2o-genmodel-extensions/xgboost/lib/xgboost4j-native-linux_minimum-0.7.jar:../../h2o-genmodel-extensions/xgboost/lib/xgboost4j-native-linux_gpu-0.7.jar:../../h2o-core/build/libs/h2o-core-3.15.0.jar:../../h2o-algos/build/libs/h2o-algos-3.15.0.jar:../../h2o-genmodel/build/libs/h2o-genmodel-3.15.0.jar:../../h2o-genmodel-extensions/xgboost/build/libs/h2o-genmodel-ext-xgboost-3.15.0.jar:../../h2o-core/build/libs/h2o-core-3.15.0-test.jar:../../h2o-jaas-pam/build/libs/h2o-jaas-pam-3.15.0.jar:../../lib/* ./testSingleNode.sh
 
+test-junit-orc-parser:
 	@echo "+--JUnit H2O-ORC-Parser TestMultiNode--+"
 	rm -f h2o-core/src/main/java/water/init/BuildVersion.java
 	./gradlew h2o-orc-parser:cpLibs
 	cd h2o-parsers/h2o-orc-parser && ./testMultiNode.sh
 
+test-junit-parquet-parser:
 	@echo "+--JUnit H2O-PARQUET-Parser TestMultiNode--+"
 	rm -f h2o-core/src/main/java/water/init/BuildVersion.java
 	./gradlew h2o-parquet-parser:cpLibs
 	cd h2o-parsers/h2o-parquet-parser && ./testMultiNode.sh
 
+test-junit-persist-s3:
 	@echo "+--JUnit H2O-Persist-S3 TestMultiNode--+"
 	rm -f h2o-core/src/main/java/water/init/BuildVersion.java
 	./gradlew h2o-persist-s3:cpLibs
 	cd h2o-persist-s3/ && ./testMultiNode.sh
 
+test-junit-scala-2.10:
 	@echo "+--JUnit H2O-Scala_2.10 TestMultiNode--+"
 	rm -f h2o-core/src/main/java/water/init/BuildVersion.java
 	./gradlew h2o-scala_2.10:cpLibs
 	cd h2o-scala && PROJECT_NAME=h2o-scala_2.10 BUILD_DIR=h2o-scala/build/h2o-scala_2.10 ./testMultiNode.sh
+
+test-junit-scala-2.11:
 	@echo "+--JUnit H2O-Scala_2.11 TestMultiNode--+"
 	rm -f h2o-core/src/main/java/water/init/BuildVersion.java
 	./gradlew h2o-scala_2.11:cpLibs
 	cd h2o-scala && PROJECT_NAME=h2o-scala_2.11 BUILD_DIR=h2o-scala/build/h2o-scala_2.11 ./testMultiNode.sh
 
+test-junit-integ:
 	@echo "+--JUnit H2O-Test-Integ runPythonMultiJVMTests--+"
 	rm -f h2o-core/src/main/java/water/init/BuildVersion.java
 	./gradlew h2o-test-integ:runPythonMultiJVMTests
+
+test-junit: test-junit-algos test-junit-avro-parser test-junit-core \
+	test-junit-ext-xgboost test-junit-orc-parser test-junit-parquet-parser \
+	test-junit-persist-s3 test-junit-scala-2.10 test-junit-scala-2.11 test-junit-integ
+
+JUNIT_SMOKE_DOONLY = $$(head -n 1 tests/doOnlyJunitSmokeTestList)
+test-junit-smoke:
+	@ DOONLY=$(JUNIT_SMOKE_DOONLY) $(MAKE) -f $(THIS_FILE) test-junit-core test-junit-algos test-junit-scala-2.10 test-junit-scala-2.11
