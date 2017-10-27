@@ -36,6 +36,12 @@ public abstract class Paxos {
   // This is a packet announcing what Cloud this Node thinks is the current
   // Cloud, plus other status bits
   static synchronized int doHeartbeat( H2ONode h2o ) {
+    
+    if(h2o._heartbeat._cloud_name_hash != H2O.SELF._heartbeat._cloud_name_hash){
+      // ignore requests from this node as they are coming from different cluster
+      return 0;
+    }
+
     // Kill somebody if the jar files mismatch.  Do not attempt to deal with
     // mismatched jars.
     if(!H2O.ARGS.client && !h2o._heartbeat._client) {
@@ -52,11 +58,6 @@ public abstract class Paxos {
     }else{
       // Just report that client with different md5 tried to connect
       ListenerService.getInstance().report("client_wrong_md5", new Object[]{h2o._heartbeat._jar_md5});
-    }
-    
-    if(h2o._heartbeat._cloud_name_hash != H2O.SELF._heartbeat._cloud_name_hash){
-      // ignore requests from this node as they are coming from different cluster
-      return 0;
     }
 
     // I am not client but received client heartbeat in flatfile mode.
